@@ -1,0 +1,13 @@
+name: scraper
+version: 0.1.0
+
+authors:
+  - Wilson <wtovaragudelo@gmail.com>
+
+targets:
+  scraper:
+    main: src/scraper.cr
+
+crystal: '>= 1.13.1'
+
+license: MIT
