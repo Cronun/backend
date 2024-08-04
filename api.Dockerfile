@@ -6,7 +6,7 @@ WORKDIR /app
 COPY ./shard.yml ./shard.lock /app/
 RUN shards install --production -v
 COPY . /app/
-RUN shards build --static --release --production --stats --time -v api
+RUN shards build --release --production --stats --time -v api
 
 FROM alpine:latest
 WORKDIR /
