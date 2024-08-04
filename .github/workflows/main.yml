@@ -5,6 +5,9 @@ on:
     branches:
       - "main"
 
+env:
+  TEST_TAG: user/app:test
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,5 +19,11 @@ jobs:
       - name: Build api
         uses: docker/build-push-action@v6
         with:
+          load: true
           push: false
           file: api.Dockerfile
+          tags: ${{ env.TEST_TAG }}
+
+      - name: Test
+        run: |
+          docker run --rm ${{ env.TEST_TAG }}
