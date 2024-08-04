@@ -1,10 +1,19 @@
 require "sqlite3"
 
-module Cronun
+module Cronun::Database
   Log = ::Log.for(self)
 
   DATABASE_PATH = "sqlite3://src/data/database.db"
   DATABASE      = DB.open(DATABASE_PATH)
+
+  struct Paginator(T)
+    def initialize(@page = 1, @limit = 10, @data = [] of T)
+    end
+
+    def to_json
+      {:page => @page, :limit => @limit, :data => @data}.to_json
+    end
+  end
 
   def self.create_db_tables
     Log.info { "Creating DB tables..." }
@@ -41,5 +50,121 @@ module Cronun
         FOREIGN KEY("subject_code") REFERENCES "subjects"("code")
       );
     SQL
+  end
+
+  def self.get_departments
+    DATABASE.query_all(
+      "select code, name from departments order by code asc",
+      as: {code: String, name: String}
+    )
+  end
+
+  def self.find_subjects(page = 1)
+    limit = 10
+
+    page = Math.max(page, 1)
+    offset = (page - 1) * limit
+
+    data = DATABASE.query_all(
+      "
+        select
+          subjects.code,
+          subjects.name,
+          departments.name as department_name,
+          departments.code as department_code
+        from subjects
+        inner join departments on subjects.department_code = departments.code
+        limit ?
+        offset ?
+      ",
+      limit,
+      offset,
+      as: {code: String, name: String, department_code: String, department_name: String}
+    )
+
+    subjects = data.map { |s| Models::Subject.new(
+      s[:code],
+      s[:name],
+      Models::Department.new(s[:department_name], s[:department_code])
+    ) }
+
+    Paginator(Models::Subject).new(page: page, data: subjects)
+  end
+
+  def self.find_groups(subject_code : String)
+    data = DATABASE.query_all(
+      "
+        select
+          nrc,
+          professors,
+          schedule,
+          schedule_type,
+          group_number,
+          quota_taken,
+          quota_free,
+          subjects.code as subjects_code,
+          subjects.name as subjects_name,
+          departments.name as department_name,
+          departments.code as department_code
+        from groups
+        inner join subjects on groups.subject_code = subjects.code
+        inner join departments on subjects.department_code = departments.code
+        where groups.subject_code = ?
+      ",
+      subject_code,
+      as: {
+        nrc:             String,
+        professors:      String,
+        schedule:        String,
+        schedule_type:   String,
+        group_number:    Int32,
+        quota_taken:     Int32,
+        quota_free:      Int32,
+        subjects_code:   String,
+        subjects_name:   String,
+        department_name: String,
+        department_code: String,
+      }
+    )
+
+    groups = data.map do |d|
+      department = Models::Department.new(d[:department_name], d[:department_code])
+      subject = Models::Subject.new(d[:subjects_code], d[:subjects_name], department)
+
+      nrc = d[:nrc]
+      schedule_type = d[:schedule_type]
+      group_number = d[:group_number]
+      quota_taken = d[:quota_taken]
+      quota_free = d[:quota_free]
+
+      professors = Array(String).from_json(d[:professors])
+      schedule = Array(Models::Schedule).from_json(d[:schedule])
+
+      Models::Group.new(
+        department,
+        nrc,
+        subject,
+        professors,
+        schedule,
+        schedule_type,
+        group_number,
+        quota_taken,
+        quota_free
+      )
+    end
+
+    groups
+  end
+
+  def self.get_subject(code : String)
+    DATABASE.query_one(
+      "
+        select code, name, department_code, department_name
+        from subjects
+        where code = ?
+      ",
+      code,
+      as: {code: String, name: String, department_code: String, department_name: String}
+    )
   end
 end

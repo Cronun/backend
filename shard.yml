@@ -5,6 +5,8 @@ authors:
   - Wilson <wtovaragudelo@gmail.com>
 
 targets:
+  api:
+    main: src/api/api.cr
   scraper:
     main: src/scraper/main.cr
 
@@ -13,5 +15,7 @@ crystal: ">= 1.13.1"
 license: MIT
 
 dependencies:
+  kemal:
+    github: kemalcr/kemal
   sqlite3:
     github: crystal-lang/crystal-sqlite3

@@ -5,7 +5,7 @@ require "../common/*"
 require "./services/*"
 require "./data"
 
-Cronun.create_db_tables
+Cronun::Database.create_db_tables
 
 queue = Queue.new
 
