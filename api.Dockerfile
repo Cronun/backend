@@ -1,5 +1,7 @@
 FROM crystallang/crystal:1.13-dev-alpine-build as builder
 
+RUN apk add --no-cache sqlite-dev sqlite-libs
+
 WORKDIR /app
 COPY ./shard.yml ./shard.lock /app/
 RUN shards install --production -v
