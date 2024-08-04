@@ -1,14 +1,14 @@
-FROM crystallang/crystal:1.13-dev-alpine-build as builder
-
-RUN apk add --no-cache sqlite-dev sqlite-libs
+FROM crystallang/crystal AS builder
 
 WORKDIR /app
 COPY ./shard.yml ./shard.lock /app/
-RUN shards install --production -v
+RUN shards install --production
 COPY . /app/
-RUN shards build --release --production --stats --time -v api
+# RUN shards build --release --production --stats --time api
+RUN shards build --stats --time api
 
-FROM alpine:latest
+FROM ubuntu:24.04 
+
 WORKDIR /
 COPY --from=builder /app/src/data .
 COPY --from=builder /app/bin/api .
