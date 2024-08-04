@@ -6,8 +6,12 @@ authors:
 
 targets:
   scraper:
-    main: src/scraper.cr
+    main: src/scraper/main.cr
 
-crystal: '>= 1.13.1'
+crystal: ">= 1.13.1"
 
 license: MIT
+
+dependencies:
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
