@@ -1,5 +1,3 @@
-require "log"
-
 alias Task = ->
 
 class Queue
@@ -8,7 +6,12 @@ class Queue
   def initialize(@capacity : Int32 = 5, @wait_for = 1.second)
     @tasks = [] of Task
     @done = false
+    @close = false
     self.start
+  end
+
+  def close
+    @close = true
   end
 
   def done?
@@ -28,7 +31,7 @@ class Queue
     Log.info { "Starting queue..." }
 
     spawn do
-      loop do
+      while !empty? || !@close
         Log.debug { "Processing new group... capacity=#{@capacity}" }
 
         tasks = @tasks.pop(@capacity)

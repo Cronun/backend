@@ -33,7 +33,7 @@ module Cronun::Scraper::Data
     schedule = parse_schedule(html)
     professors = schedule.map(&.professor).uniq
 
-    subject_code, group_number, _ = subject_data
+    subject_code, group_number = subject_data
 
     {
       subject_name:  subject_name,
@@ -54,7 +54,7 @@ module Cronun::Scraper::Data
       .try &.text.strip.upcase
   end
 
-  private def self.parse_subject_data(html) : {String, String, String}?
+  private def self.parse_subject_data(html) : {String, Int32}?
     node = html.xpath_node("//*[@id=\"acreditaciones_resultado\"]/div/div/p[2]")
 
     if node
@@ -62,9 +62,10 @@ module Cronun::Scraper::Data
       str = node.text.strip.gsub(/[\s\t]+/, " ").upcase
 
       if matches = str.match(regex)
-        if matches.size == 4
-          return {matches[1], matches[2], matches[3]}
-        end
+        mat = matches[1]?
+        group_number = matches[2]?.try &.to_i?
+
+        {mat, group_number} unless mat.nil? || group_number.nil?
       end
     end
   end

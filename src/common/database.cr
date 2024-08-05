@@ -6,6 +6,15 @@ module Cronun::Database
   DATABASE_URI = ENV["DATABASE_URI"]
   DATABASE     = DB.open(DATABASE_URI)
 
+  at_exit do
+    Log.info { "Closing database..." }
+    db.close
+  end
+
+  def self.db
+    DATABASE
+  end
+
   struct Paginator(T)
     def initialize(@page = 1, @limit = 10, @data = [] of T)
     end

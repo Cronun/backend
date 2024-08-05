@@ -1,4 +1,50 @@
+require "dotenv"
+Dotenv.load
+
 require "log"
+require "option_parser"
+
+n_departments = 1
+n_groups : Int32? = 5
+period = "202430"
+
+option_parser = OptionParser.parse do |parser|
+  parser.banner = "Cronun Scraper"
+
+  parser.on "-h", "--help", "Show help" do
+    puts parser
+    exit
+  end
+
+  parser.on "-p PERIOD", "--period=PERIOD", "Period. (Default: #{period})" do |v|
+    period = v
+  end
+
+  parser.on "-d NDEPARTMENTS", "--n-departments=NDEPARTMENTS", "Numer of departments to process (Default: #{n_departments})" do |v|
+    n_departments = v.to_i? || 1
+  end
+
+  parser.on "-g NGROUPS", "--n-groups=NGROUPS", "Numer of groups to process per department (Default: #{n_groups})" do |v|
+    n_groups = v.to_i?
+  end
+
+  parser.missing_option do |option_flag|
+    STDERR.puts "ERROR: #{option_flag} is missing something."
+    STDERR.puts ""
+    STDERR.puts parser
+    exit(1)
+  end
+
+  parser.invalid_option do |option_flag|
+    STDERR.puts "ERROR: #{option_flag} is not a valid option."
+    STDERR.puts parser
+    exit(1)
+  end
+end
+
+Log.info {
+  "Using period=#{period} n_departments=#{n_departments} n_groups=#{n_groups}"
+}
 
 require "./utils"
 require "../common/*"
@@ -9,34 +55,35 @@ Cronun::Database.create_db_tables
 
 queue = Queue.new
 
-PERIOD = "202430"
-
-N_DEPARTMENTS = 1
-N_NRCS        = 5
-
 departments = Cronun::Scraper::Data.departments
 
 departments.each do |department|
-  Cronun::DATABASE.exec(
+  Cronun::Database.db.exec(
     "insert or replace into departments(code, name) values (?, ?)",
     department.code,
     department.name
   )
 end
 
-departments[...N_DEPARTMENTS].each do |department|
-  nrcs = Cronun::Scraper::Data.get_nrcs_by_department(department, PERIOD)
+departments[...n_departments].each do |department|
+  Log.info { department }
+
+  nrcs = Cronun::Scraper::Data.get_nrcs_by_department(department, period)
 
   Log.info { "Found #{nrcs.size} NRCs for #{department.name}" }
 
-  nrcs[...N_NRCS].each_with_index do |nrc, index|
+  nrcs.each_with_index do |nrc, index|
+    unless n_groups.nil?
+      next if index > n_groups.not_nil! - 1
+    end
+
     queue.add do
       Log.info { "Processing NRC=#{nrc}" }
-      data = Cronun::Scraper::Data.get_group(nrc, PERIOD, department)
+      data = Cronun::Scraper::Data.get_group(nrc, period, department)
 
       if data.nil?
         Log.info { "Deleting NRC=#{nrc}" }
-        Cronun::DATABASE.exec("delete from groups where nrc=?", nrc)
+        Cronun::Database.db.exec("delete from groups where nrc=?", nrc)
       else
         subject = Cronun::Models::Subject.new(
           name: data[:subject_name],
@@ -44,9 +91,9 @@ departments[...N_DEPARTMENTS].each do |department|
           department: department,
         )
 
-        Log.info { "Inserting subject=#{subject}" }
+        Log.debug { "Inserting subject=#{subject}" }
 
-        Cronun::DATABASE.exec(
+        Cronun::Database.db.exec(
           "insert or replace into subjects(code, name, department_code) values (?, ?, ?)",
           subject.code,
           subject.name,
@@ -65,9 +112,9 @@ departments[...N_DEPARTMENTS].each do |department|
           quota_free: data[:quota_free],
         )
 
-        Log.info { "Inserting group=#{group}" }
+        Log.debug { "Inserting group=#{group}" }
 
-        Cronun::DATABASE.exec(
+        Cronun::Database.db.exec(
           "insert or replace into groups(
           nrc,
           professors,
@@ -89,12 +136,20 @@ departments[...N_DEPARTMENTS].each do |department|
           subject.code
         )
       end
-
-      if index == N_NRCS - 1
-        Log.info { "DONE! :D" }
-        exit(0)
-      end
     end
+  end
+
+  queue.close
+end
+
+spawn do
+  loop do
+    if queue.done? && queue.empty?
+      Log.info { "DONE! :D" }
+      exit(0)
+    end
+
+    sleep(0.5)
   end
 end
 
