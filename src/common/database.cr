@@ -153,7 +153,7 @@ module Cronun::Database
       subject_code,
       as: {
         nrc:             String,
-        professors:      JSON::PullParser,
+        professors:      Array(String),
         schedule:        JSON::PullParser,
         schedule_type:   String,
         group_number:    Int32,
@@ -176,7 +176,7 @@ module Cronun::Database
       quota_taken = d[:quota_taken]
       quota_free = d[:quota_free]
 
-      professors = Array(String).new(d[:professors])
+      professors = d[:professors]
       schedule = Array(Models::Schedule).new(d[:schedule])
 
       Models::Group.new(
