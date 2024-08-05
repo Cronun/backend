@@ -86,8 +86,8 @@ module Cronun::Database
           departments.code as department_code
         from subjects
         inner join departments on subjects.department_code = departments.code
-        limit ?
-        offset ?
+        limit $1
+        offset $2
       ",
       limit,
       offset,
@@ -121,7 +121,7 @@ module Cronun::Database
         from groups
         inner join subjects on groups.subject_code = subjects.code
         inner join departments on subjects.department_code = departments.code
-        where groups.subject_code = ?
+        where groups.subject_code = $1
       ",
       subject_code,
       as: {
@@ -173,7 +173,7 @@ module Cronun::Database
       "
         select code, name, department_code, department_name
         from subjects
-        where code = ?
+        where code = $1
       ",
       code,
       as: {code: String, name: String, department_code: String, department_name: String}
