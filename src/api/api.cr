@@ -39,8 +39,16 @@ get "/subjects/:subject_code/groups" do |env|
   groups.to_json
 end
 
+def get_total(key : String, table : String) : Int64
+  Cronun::Database.db.scalar("select count(#{key}) from #{table}").as(Int64)
+end
+
 get "/" do
-  {"hi": ":D"}.to_json
+  {
+    "departments" => get_total("code", "departments"),
+    "subjects"    => get_total("code", "subjects"),
+    "groups"      => get_total("nrc", "groups"),
+  }.to_json
 end
 
 Kemal.run
