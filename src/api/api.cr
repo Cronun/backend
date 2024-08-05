@@ -6,8 +6,13 @@ require "kemal"
 require "../common/models"
 require "../common/database"
 
+before_all do |env|
+  env.response.content_type = "application/json"
+end
+
 get "/departments" do
-  Cronun::Database.get_departments.to_json
+  departments = Cronun::Database.get_departments
+  departments.to_json
 end
 
 get "/subjects" do |env|
@@ -21,9 +26,7 @@ end
 
 get "/subjects/:subject_code" do |env|
   subject_code = env.params.url["subject_code"].as(String)
-
   subject = Cronun::Database.get_subject(subject_code)
-  Log.info { subject }
 
   if subject.nil?
     halt(env, status_code: 404, response: "Not Found")

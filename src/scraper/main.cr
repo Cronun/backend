@@ -53,7 +53,7 @@ require "./data"
 
 Cronun::Database.create_db_tables
 
-queue = Queue.new
+queue = Queue.new(10)
 
 departments = Cronun::Scraper::Data.departments
 

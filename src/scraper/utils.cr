@@ -1,4 +1,16 @@
 module Cronun::Scraper::Utils
+  protected def self.fix_ñ(str : String?) : String?
+    str.try do |v|
+      if v.matches?(/[AEIOU]\?/)
+        v.gsub("?", "Ñ")
+      elsif v.matches?(/[aeiou]\?/)
+        v.gsub("?", "ñ")
+      else
+        v
+      end
+    end
+  end
+
   protected def self.parse_date(str : String?) : Time?
     str.try { |v|
       begin

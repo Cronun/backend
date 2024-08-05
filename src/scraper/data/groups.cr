@@ -51,7 +51,7 @@ module Cronun::Scraper::Data
   private def self.subject_name(html) : String?
     html
       .xpath_node("//*[@id=\"acreditaciones_resultado\"]/div/div/p[1]")
-      .try &.text.strip.upcase
+      .try { |v| Utils.fix_ñ(v.text.strip.upcase) }
   end
 
   private def self.parse_subject_data(html) : {String, Int32}?
@@ -95,7 +95,7 @@ module Cronun::Scraper::Data
 
         date_start = Utils.parse_date(tds[0]?)
         date_end = Utils.parse_date(tds[1]?)
-        professor = tds[2]?.try(&.strip.upcase)
+        professor = Utils.fix_ñ(tds[2]?.try(&.strip.upcase))
 
         day = tds[3]?
         place = tds[5]?
