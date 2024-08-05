@@ -59,7 +59,11 @@ departments = Cronun::Scraper::Data.departments
 
 departments.each do |department|
   Cronun::Database.db.exec(
-    "insert or replace into departments(code, name) values (?, ?)",
+    "
+      insert into departments(code, name) values ($1, $2)
+      on conflict(code) do update
+        set name = excluded.name
+    ",
     department.code,
     department.name
   )
@@ -83,7 +87,7 @@ departments[...n_departments].each do |department|
 
       if data.nil?
         Log.info { "Deleting NRC=#{nrc}" }
-        Cronun::Database.db.exec("delete from groups where nrc=?", nrc)
+        Cronun::Database.db.exec("delete from groups where nrc=$1", nrc)
       else
         subject = Cronun::Models::Subject.new(
           name: data[:subject_name],
@@ -94,7 +98,11 @@ departments[...n_departments].each do |department|
         Log.debug { "Inserting subject=#{subject}" }
 
         Cronun::Database.db.exec(
-          "insert or replace into subjects(code, name, department_code) values (?, ?, ?)",
+          "
+            insert into subjects(code, name, department_code) values ($1, $2, $3)
+            on conflict (code) do update
+              set name = excluded.name
+          ",
           subject.code,
           subject.name,
           department.code
@@ -115,17 +123,27 @@ departments[...n_departments].each do |department|
         Log.debug { "Inserting group=#{group}" }
 
         Cronun::Database.db.exec(
-          "insert or replace into groups(
-          nrc,
-          professors,
-          schedule,
-          schedule_type,
-          group_number,
-          quota_taken,
-          quota_free,
-          subject_code
-        )
-        values (?, ?, ?, ?, ?, ?, ?, ?)",
+          "
+            insert into groups(
+              nrc,
+              professors,
+              schedule,
+              schedule_type,
+              group_number,
+              quota_taken,
+              quota_free,
+              subject_code
+            )
+            values ($1, $2, $3, $4, $5, $6, $7, $8)
+            on conflict (nrc) do update
+              set professors = excluded.professors,
+                  schedule = excluded.schedule,
+                  schedule_type = excluded.schedule_type,
+                  group_number = excluded.group_number,
+                  quota_taken = excluded.quota_taken,
+                  quota_free = excluded.quota_free,
+                  subject_code = excluded.subject_code
+          ",
           group.nrc,
           group.professors.to_json,
           group.schedule.to_json,

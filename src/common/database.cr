@@ -86,11 +86,9 @@ module Cronun::Database
           departments.code as department_code
         from subjects
         inner join departments on subjects.department_code = departments.code
-        limit $1
-        offset $2
+        limit #{limit}
+        offset #{offset}
       ",
-      limit,
-      offset,
       as: {code: String, name: String, department_code: String, department_name: String}
     )
 
