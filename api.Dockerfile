@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 as base
+FROM ubuntu:24.04 as builder
 
 RUN apt-get update
 RUN apt-get install -y libsqlite3-dev libevent-dev curl gnupg tree
