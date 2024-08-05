@@ -15,6 +15,8 @@ crystal: ">= 1.13.1"
 license: MIT
 
 dependencies:
+  dotenv:
+    github: drum445/dotenv
   kemal:
     github: kemalcr/kemal
   sqlite3:

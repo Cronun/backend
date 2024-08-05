@@ -3,8 +3,8 @@ require "sqlite3"
 module Cronun::Database
   Log = ::Log.for(self)
 
-  DATABASE_PATH = "sqlite3://src/data/database.db"
-  DATABASE      = DB.open(DATABASE_PATH)
+  DATABASE_URI = ENV["DATABASE_URI"]
+  DATABASE     = DB.open(DATABASE_URI)
 
   struct Paginator(T)
     def initialize(@page = 1, @limit = 10, @data = [] of T)
