@@ -1,6 +1,7 @@
 FROM crystallang/crystal AS builder
 
 WORKDIR /app
+RUN apt-get update && apt-get install -y libsqlite3-dev
 COPY ./shard.yml ./shard.lock /app/
 RUN shards install --production
 COPY . /app/
