@@ -28,21 +28,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build builder container
-        uses: docker/build-push-action@v6
-        with:
-          load: true
-          push: true
-          file: docker/builder.Dockerfile
-          tags: ghcr.io/cronun/backend-builder:latest
-
       - name: Build base container
         uses: docker/build-push-action@v6
         with:
-          load: true
+          # load: true
           push: true
-          file: docker/base.Dockerfile
-          tags: ghcr.io/cronun/backend-base:latest
+          file: api.Dockerfile
+          tags: ghcr.io/cronun/backend-api:latest
 
       # - name: Test
       #   run: |
