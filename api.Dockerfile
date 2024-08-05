@@ -10,9 +10,9 @@ RUN apt-get install -y crystal
 
 WORKDIR /app
 COPY ./shard.yml ./shard.lock /app/
-RUN /usr/bin/shards install --production
+RUN shards install --production
 COPY . /app/
-RUN /usr/bin/shards build --release --production --stats --time api
+RUN shards build --static --release --production --stats --time api
 # RUN shards build --static --stats --time api
 
 FROM ubuntu:24.04

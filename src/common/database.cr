@@ -5,7 +5,9 @@ module Cronun::Database
   Log = ::Log.for(self)
 
   DATABASE_URI = ENV["DATABASE_URI"]
-  DATABASE     = DB.open(DATABASE_URI)
+
+  Log.info { "Opening database using #{DATABASE_URI}..." }
+  DATABASE = DB.open(DATABASE_URI)
 
   at_exit do
     Log.info { "Closing database..." }
