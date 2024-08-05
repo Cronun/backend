@@ -11,10 +11,25 @@ get "/departments" do
 end
 
 get "/subjects" do |env|
-  page = env.params.query["page"]?.try(&.to_i { 1 }) || 1
+  page = env.params.query["page"]?
+  name = env.params.query["name"]?
+  department = env.params.query["department"]?
 
-  subjects = Cronun::Database.find_subjects(page)
+  subjects = Cronun::Database.find_subjects(department: department, name: name, page: page)
   subjects.to_json
+end
+
+get "/subjects/:subject_code" do |env|
+  subject_code = env.params.url["subject_code"].as(String)
+
+  subject = Cronun::Database.get_subject(subject_code)
+  Log.info { subject }
+
+  if subject.nil?
+    halt(env, status_code: 404, response: "Not Found")
+  else
+    subject.to_json
+  end
 end
 
 get "/subjects/:subject_code/groups" do |env|

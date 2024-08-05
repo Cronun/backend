@@ -145,7 +145,7 @@ departments[...n_departments].each do |department|
                   subject_code = excluded.subject_code
           ",
           group.nrc,
-          group.professors.to_json,
+          group.professors,
           group.schedule.to_json,
           group.schedule_type,
           group.group_number,

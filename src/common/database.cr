@@ -32,16 +32,16 @@ module Cronun::Database
 
     DATABASE.exec <<-SQL
       CREATE TABLE IF NOT EXISTS "departments" (
-        "name"	TEXT NOT NULL,
-        "code"	TEXT NOT NULL UNIQUE,
-        PRIMARY KEY("code")
+        "name" TEXT COLLATE "unicode" NOT NULL,
+        "code" TEXT COLLATE "unicode" NOT NULL,
+        CONSTRAINT departments_pk PRIMARY KEY ("code")
       );
     SQL
 
     DATABASE.exec <<-SQL
       CREATE TABLE IF NOT EXISTS "subjects" (
-        "name"	TEXT NOT NULL,
-        "code"	TEXT UNIQUE,
+        "name" TEXT COLLATE "unicode" NOT NULL,
+        "code" TEXT COLLATE "unicode" UNIQUE,
         "department_code"	TEXT NOT NULL,
         PRIMARY KEY("code"),
         FOREIGN KEY("department_code") REFERENCES "departments"("code")
@@ -50,14 +50,14 @@ module Cronun::Database
 
     DATABASE.exec <<-SQL
       CREATE TABLE IF NOT EXISTS "groups" (
-        "nrc"	TEXT NOT NULL,
-        "professors"	JSON NOT NULL,
-        "schedule"	JSON NOT NULL,
-        "schedule_type"	TEXT NOT NULL,
-        "group_number"	INTEGER NOT NULL,
-        "quota_taken"	INTEGER NOT NULL,
-        "quota_free"	INTEGER NOT NULL,
-        "subject_code"	TEXT NOT NULL,
+        "nrc" TEXT COLLATE "unicode" NOT NULL,
+        "professors" TEXT[] COLLATE "unicode" NOT NULL,
+        "schedule" JSON NOT NULL,
+        "schedule_type" TEXT COLLATE "unicode" NOT NULL,
+        "group_number" INTEGER NOT NULL,
+        "quota_taken" INTEGER NOT NULL,
+        "quota_free" INTEGER NOT NULL,
+        "subject_code" TEXT NOT NULL,
         PRIMARY KEY("nrc"),
         FOREIGN KEY("subject_code") REFERENCES "subjects"("code")
       );
@@ -71,34 +71,63 @@ module Cronun::Database
     )
   end
 
-  def self.find_subjects(page = 1)
+  def self.find_subjects(*, page : (Int32 | String)? = 1, name : String? = nil, department : String? = nil)
+    parsed_page : Int32 = begin
+      case page
+      when .nil?
+        1
+      when String
+        page.to_i { 1 }
+      else
+        page
+      end
+    end
+
+    parsed_page = Math.max(parsed_page, 1)
+
     limit = 10
+    offset = (parsed_page - 1) * limit
 
-    page = Math.max(page, 1)
-    offset = (page - 1) * limit
+    args = [] of String
+    conditions = [] of String
 
-    data = DATABASE.query_all(
-      "
+    unless department.nil?
+      conditions << "(departments.code ilike '%#{department}%' or departments.name ilike '%#{department}%')"
+    end
+
+    unless name.nil?
+      conditions << "(subjects.name ilike '%#{name}%' or  subjects.code ilike '%#{name}%')"
+    end
+
+    conditions_str = conditions.size > 0 ? "where " + conditions.join(" and ") : ""
+
+    query = "
         select
           subjects.code,
           subjects.name,
           departments.name as department_name,
           departments.code as department_code
         from subjects
-        inner join departments on subjects.department_code = departments.code
-        limit #{limit}
-        offset #{offset}
-      ",
-      as: {code: String, name: String, department_code: String, department_name: String}
+        inner join departments on subjects.department_code = departments.code #{conditions_str}
+        limit $1
+        offset $2
+      "
+
+    data = DATABASE.query_all(
+      query,
+      limit, offset,
+      as: {code: String, name: String, department_name: String, department_code: String}
     )
 
-    subjects = data.map { |s| Models::Subject.new(
-      s[:code],
-      s[:name],
-      Models::Department.new(s[:department_name], s[:department_code])
-    ) }
+    subjects = data.map { |s|
+      Models::Subject.new(
+        code: s[:code],
+        name: s[:name],
+        department: Models::Department.new(s[:department_name], s[:department_code])
+      )
+    }
 
-    Paginator(Models::Subject).new(page: page, data: subjects)
+    Paginator(Models::Subject).new(page: parsed_page, data: subjects)
   end
 
   def self.find_groups(subject_code : String)
@@ -124,8 +153,8 @@ module Cronun::Database
       subject_code,
       as: {
         nrc:             String,
-        professors:      String,
-        schedule:        String,
+        professors:      JSON::PullParser,
+        schedule:        JSON::PullParser,
         schedule_type:   String,
         group_number:    Int32,
         quota_taken:     Int32,
@@ -138,8 +167,8 @@ module Cronun::Database
     )
 
     groups = data.map do |d|
-      department = Models::Department.new(d[:department_name], d[:department_code])
-      subject = Models::Subject.new(d[:subjects_code], d[:subjects_name], department)
+      department = Models::Department.new(name: d[:department_name], code: d[:department_code])
+      subject = Models::Subject.new(code: d[:subjects_code], name: d[:subjects_name], department: department)
 
       nrc = d[:nrc]
       schedule_type = d[:schedule_type]
@@ -147,8 +176,8 @@ module Cronun::Database
       quota_taken = d[:quota_taken]
       quota_free = d[:quota_free]
 
-      professors = Array(String).from_json(d[:professors])
-      schedule = Array(Models::Schedule).from_json(d[:schedule])
+      professors = Array(String).new(d[:professors])
+      schedule = Array(Models::Schedule).new(d[:schedule])
 
       Models::Group.new(
         department,
@@ -167,14 +196,24 @@ module Cronun::Database
   end
 
   def self.get_subject(code : String)
-    DATABASE.query_one(
+    result = DATABASE.query_one?(
       "
-        select code, name, department_code, department_name
+        select
+          subjects.code,
+          subjects.name,
+          departments.code as department_code,
+          departments.name as department_name
         from subjects
-        where code = $1
+        inner join departments on departments.code = subjects.department_code
+        where subjects.code = $1
       ",
       code,
       as: {code: String, name: String, department_code: String, department_name: String}
     )
+
+    result.try { |d|
+      department = Models::Department.new(code: d[:department_code], name: d[:department_name])
+      Models::Subject.new(code: d[:code], name: d[:name], department: department)
+    }
   end
 end
