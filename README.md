@@ -1,10 +1,22 @@
 # scraper
 
-TODO: Write a description here
+### Methods
 
-## Installation
+```
+GET /departments
+```
 
-TODO: Write installation instructions here
+```
+GET /subjects[?page=<value>&name=<value>&department=<value>]
+```
+
+```
+GET /subjects/<code>
+```
+
+```
+GET /subjects/<code>/groups
+```
 
 ## Usage
 
