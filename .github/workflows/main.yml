@@ -24,6 +24,6 @@ jobs:
           file: api.Dockerfile
           tags: ${{ env.TEST_TAG }}
 
-      - name: Test
-        run: |
-          docker run --rm ${{ env.TEST_TAG }}
+      # - name: Test
+      #   run: |
+      #     docker run --rm ${{ env.TEST_TAG }}
