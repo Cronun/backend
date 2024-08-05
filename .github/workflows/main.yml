@@ -31,11 +31,7 @@ jobs:
       - name: Build api container
         uses: docker/build-push-action@v6
         with:
-          # load: true
-          push: true
+          load: true
+          # push: true
           file: api.Dockerfile
           tags: ghcr.io/cronun/backend-api:latest
-
-      # - name: Test
-      #   run: |
-      #     docker run --rm ${{ env.TEST_TAG }}
