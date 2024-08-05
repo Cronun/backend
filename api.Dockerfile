@@ -1,15 +1,22 @@
-FROM crystallang/crystal AS builder
+FROM ubuntu:24.04 as base
+RUN apt-get update
+RUN apt-get install -y libsqlite3-dev curl gnupg 
+
+FROM base AS builder
+
+RUN curl -fsSL https://packagecloud.io/84codes/crystal/gpgkey | gpg --dearmor | tee /etc/apt/trusted.gpg.d/84codes_crystal.gpg > /dev/null
+RUN echo "deb https://packagecloud.io/84codes/crystal/any any main" | tee /etc/apt/sources.list.d/84codes_crystal.list
+RUN apt-get update
+RUN apt-get install -y crystal
 
 WORKDIR /app
-RUN apt-get update && apt-get install -y libsqlite3-dev
 COPY ./shard.yml ./shard.lock /app/
 RUN shards install --production
 COPY . /app/
 # RUN shards build --release --production --stats --time api
 RUN shards build --stats --time api
 
-FROM ubuntu:24.04 
-
+FROM base as release
 WORKDIR /
 COPY --from=builder /app/src/data .
 COPY --from=builder /app/bin/api .
