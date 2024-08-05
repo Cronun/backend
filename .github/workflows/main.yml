@@ -5,24 +5,36 @@ on:
     branches:
       - "main"
 
-env:
-  TEST_TAG: user/app:test
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      # - uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ env.REGISTRY }}
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build api
+      - name: Build database container
         uses: docker/build-push-action@v6
         with:
           load: true
-          push: false
-          file: api.Dockerfile
-          tags: ${{ env.TEST_TAG }}
+          push: true
+          file: database.Dockerfile
+          tags: cronun/database:latest
 
       # - name: Test
       #   run: |
