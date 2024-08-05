@@ -18,7 +18,6 @@ RUN /usr/bin/shards build --release --production --stats --time api
 FROM ubuntu:24.04
 
 WORKDIR /app
-COPY --from=builder /app/src/data/*.db /app
 COPY --from=builder /app/bin /app
 
 ENTRYPOINT ["/app/api"]
