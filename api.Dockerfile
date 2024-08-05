@@ -1,6 +1,6 @@
 FROM ubuntu:24.04 as base
 RUN apt-get update
-RUN apt-get install -y libsqlite3-dev curl gnupg 
+RUN apt-get install -y libsqlite3-dev libevent-dev curl gnupg 
 
 FROM base AS builder
 
@@ -14,11 +14,12 @@ COPY ./shard.yml ./shard.lock /app/
 RUN shards install --production
 COPY . /app/
 # RUN shards build --release --production --stats --time api
-RUN shards build --stats --time api
+RUN shards build --static --stats --time api
 
 FROM base as release
-WORKDIR /
-COPY --from=builder /app/src/data .
-COPY --from=builder /app/bin/api .
+WORKDIR /app
+COPY --from=builder /app/src/data /app
+COPY --from=builder /app/bin /app
+RUN ls -alh .
 
-ENTRYPOINT ["/api"]
+ENTRYPOINT ["/app/api"]
