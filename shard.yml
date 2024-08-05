@@ -15,9 +15,9 @@ crystal: ">= 1.13.1"
 license: MIT
 
 dependencies:
+  pg:
+    github: will/crystal-pg
   dotenv:
     github: drum445/dotenv
   kemal:
     github: kemalcr/kemal
-  sqlite3:
-    github: crystal-lang/crystal-sqlite3

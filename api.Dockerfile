@@ -20,7 +20,5 @@ FROM ubuntu:24.04
 WORKDIR /app
 COPY --from=builder /app/src/data/*.db /app
 COPY --from=builder /app/bin /app
-RUN ls -alh .
-RUN tree .
 
 ENTRYPOINT ["/app/api"]

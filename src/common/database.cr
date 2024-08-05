@@ -1,4 +1,5 @@
-require "sqlite3"
+require "db"
+require "pg"
 
 module Cronun::Database
   Log = ::Log.for(self)
@@ -48,8 +49,8 @@ module Cronun::Database
     DATABASE.exec <<-SQL
       CREATE TABLE IF NOT EXISTS "groups" (
         "nrc"	TEXT NOT NULL,
-        "professors"	BLOB NOT NULL,
-        "schedule"	BLOB NOT NULL,
+        "professors"	JSON NOT NULL,
+        "schedule"	JSON NOT NULL,
         "schedule_type"	TEXT NOT NULL,
         "group_number"	INTEGER NOT NULL,
         "quota_taken"	INTEGER NOT NULL,
